@@ -31,7 +31,7 @@ pub fn export_json(annotations: &[Annotation]) -> anyhow::Result<String> {
     let files: Vec<ExportFile> = by_file
         .into_iter()
         .map(|(file, mut anns)| {
-            anns.sort_by_key(|a| a.start_line);
+            anns.sort_by(|a, b| b.start_line.cmp(&a.start_line));
             ExportFile {
                 file,
                 annotations: anns
@@ -68,12 +68,17 @@ mod tests {
     #[test]
     fn test_export() {
         let anns = vec![
-            Annotation::new("src/a.rs".into(), 5, 10, "fix".into()),
+            Annotation::new("src/a.rs".into(), 5, 10, "first".into()),
+            Annotation::new("src/a.rs".into(), 20, 25, "second".into()),
             Annotation::new("src/b.rs".into(), 1, 1, "note".into()),
         ];
         let json = export_json(&anns).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
-        assert_eq!(parsed["total_annotations"], 2);
+        assert_eq!(parsed["total_annotations"], 3);
         assert_eq!(parsed["files"].as_array().unwrap().len(), 2);
+        // Within a.rs, annotations should be in reverse line order
+        let a_file = &parsed["files"][0];
+        assert_eq!(a_file["annotations"][0]["start_line"], 20);
+        assert_eq!(a_file["annotations"][1]["start_line"], 5);
     }
 }

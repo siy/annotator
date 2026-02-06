@@ -14,7 +14,7 @@ pub fn export_markdown(annotations: &[Annotation]) -> String {
     let mut out = String::from("# Annotations\n\n");
 
     for (file, mut anns) in by_file {
-        anns.sort_by_key(|a| a.start_line);
+        anns.sort_by(|a, b| b.start_line.cmp(&a.start_line));
         out.push_str(&format!("## `{file}`\n\n"));
         for a in anns {
             if a.start_line == a.end_line {
@@ -55,9 +55,13 @@ mod tests {
         assert!(md.contains("**Line 5**: fix bug"));
         assert!(md.contains("**Lines 10-20**: refactor this"));
         assert!(md.contains("**Lines 15-18**: add tests"));
-        // a.rs should come before b.rs (sorted)
+        // a.rs should come before b.rs (files sorted alphabetically)
         let a_pos = md.find("src/a.rs").unwrap();
         let b_pos = md.find("src/b.rs").unwrap();
         assert!(a_pos < b_pos);
+        // Within a.rs, line 15 should come before line 5 (reverse order)
+        let line15_pos = md.find("Lines 15-18").unwrap();
+        let line5_pos = md.find("Line 5").unwrap();
+        assert!(line15_pos < line5_pos);
     }
 }
