@@ -15,7 +15,7 @@ pub fn render(frame: &mut Frame, app: &App, highlighter: &Highlighter) {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Min(1),
-            Constraint::Length(2),
+            Constraint::Length(3),
         ])
         .split(size);
 
@@ -40,6 +40,10 @@ pub fn render(frame: &mut Frame, app: &App, highlighter: &Highlighter) {
 
     // Status bar
     let (reviewed, total) = app.review_progress();
+    let annotation_at_cursor = annotations
+        .iter()
+        .find(|a| a.contains_line(app.cursor_line))
+        .map(|a| a.text.as_str());
     let status = StatusBar {
         filename: app.current_file().unwrap_or("(no file)"),
         cursor_line: app.cursor_line,
@@ -48,6 +52,7 @@ pub fn render(frame: &mut Frame, app: &App, highlighter: &Highlighter) {
         reviewed,
         total_files: total,
         message: app.status_message.as_deref(),
+        annotation_preview: annotation_at_cursor,
     };
     frame.render_widget(status, status_area);
 

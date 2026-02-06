@@ -67,7 +67,7 @@ fn run_tui(mut app: tui::app::App) -> Result<()> {
     loop {
         terminal.draw(|f| {
             let size = f.area();
-            app.viewport_height = size.height.saturating_sub(2);
+            app.viewport_height = size.height.saturating_sub(3);
             app.viewport_width = size.width;
             tui::render::render(f, &app, &highlighter);
         })?;
