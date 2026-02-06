@@ -26,6 +26,13 @@ impl<'a> Widget for FileViewer<'a> {
             height: area.height,
         };
 
+        // Build a set of annotation end_lines to show inline text after
+        let annotation_display: Vec<(u32, &str)> = self
+            .annotations
+            .iter()
+            .map(|a| (a.end_line, a.text.as_str()))
+            .collect();
+
         for row in 0..area.height {
             let line_num = self.scroll_offset + row as u32 + 1;
             let is_annotated = self
@@ -42,6 +49,8 @@ impl<'a> Widget for FileViewer<'a> {
             let marker = if is_annotated { ">" } else { " " };
             let gutter_style = if is_cursor_line {
                 Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            } else if is_annotated {
+                Style::default().fg(Color::Rgb(200, 180, 100))
             } else {
                 Style::default().fg(Color::DarkGray)
             };
@@ -63,6 +72,7 @@ impl<'a> Widget for FileViewer<'a> {
             );
 
             // Code content
+            let mut code_end_col = 0u16;
             if (line_num as usize) <= self.highlighted_lines.len() {
                 let line = &self.highlighted_lines[line_num as usize - 1];
                 let mut col = 0u16;
@@ -90,6 +100,7 @@ impl<'a> Widget for FileViewer<'a> {
                         col += 1;
                     }
                 }
+                code_end_col = col;
                 // Fill remaining with cursor/selection styles
                 while col < code_area.width {
                     let mut style = Style::default();
@@ -103,6 +114,33 @@ impl<'a> Widget for FileViewer<'a> {
                     }
                     buf.set_string(code_area.x + col, area.y + row, " ", style);
                     col += 1;
+                }
+            }
+
+            // Show annotation text inline at the end_line of each annotation
+            for (end_line, text) in &annotation_display {
+                if line_num == *end_line {
+                    let note_style = Style::default()
+                        .fg(Color::Rgb(180, 160, 80))
+                        .bg(Color::Rgb(50, 50, 30));
+                    let gap = 2u16;
+                    let start_col = code_end_col + gap;
+                    if start_col < code_area.width {
+                        let prefix = " // ";
+                        let max_chars = (code_area.width - start_col) as usize;
+                        let note_text: String = text
+                            .replace('\n', " ")
+                            .chars()
+                            .take(max_chars.saturating_sub(prefix.len()))
+                            .collect();
+                        let display = format!("{}{}", prefix, note_text);
+                        buf.set_string(
+                            code_area.x + start_col,
+                            area.y + row,
+                            &display,
+                            note_style,
+                        );
+                    }
                 }
             }
         }

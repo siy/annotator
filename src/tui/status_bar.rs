@@ -78,8 +78,7 @@ impl<'a> Widget for StatusBar<'a> {
             } else {
                 let hints: &[(&str, &str)] = &[
                     ("^Q", "Quit"),
-                    ("Enter", "Annotate"),
-                    ("^E", "Edit"),
+                    ("Enter", "Annotate/Edit"),
                     ("^D", "Delete"),
                     ("^M", "Clean"),
                     ("^N", "Next"),

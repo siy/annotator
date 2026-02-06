@@ -127,6 +127,8 @@ fn handle_viewing_action(app: &mut tui::app::App, action: tui::keymap::Action) {
     use tui::keymap::Action;
     use tui::selection::Selection;
 
+    app.status_message = None;
+
     match action {
         Action::CursorUp => {
             app.cursor_line = app.cursor_line.saturating_sub(1).max(1);
@@ -201,9 +203,21 @@ fn handle_viewing_action(app: &mut tui::app::App, action: tui::keymap::Action) {
             app.selection.as_mut().unwrap().extend_to(app.cursor_line, app.cursor_col);
         }
         Action::CreateAnnotation => {
-            app.mode = tui::app::AppMode::AnnotationInput;
-            app.annotation_input.clear();
-            app.annotation_input_cursor = 0;
+            // If cursor is on an annotated line, edit it; otherwise create new
+            let file = app.current_file().map(|s| s.to_string());
+            if let Some(file) = file {
+                let line = app.cursor_line;
+                if let Some(ann) = app.annotations.iter().find(|a| a.file_path == file && a.contains_line(line)) {
+                    app.editing_annotation_id = Some(ann.id);
+                    app.annotation_input = ann.text.clone();
+                    app.annotation_input_cursor = ann.text.len();
+                    app.mode = tui::app::AppMode::AnnotationEdit;
+                } else {
+                    app.mode = tui::app::AppMode::AnnotationInput;
+                    app.annotation_input.clear();
+                    app.annotation_input_cursor = 0;
+                }
+            }
         }
         Action::EditAnnotation => {
             let file = app.current_file().map(|s| s.to_string());
@@ -217,7 +231,13 @@ fn handle_viewing_action(app: &mut tui::app::App, action: tui::keymap::Action) {
                 }
             }
         }
-        Action::DeleteAnnotation => app.delete_annotation_at_cursor(),
+        Action::DeleteAnnotation => {
+            let had = app.annotations.len();
+            app.delete_annotation_at_cursor();
+            if app.annotations.len() < had {
+                app.status_message = Some("Annotation deleted".into());
+            }
+        }
         Action::MarkClean => app.mark_file_clean(),
         Action::NextUnreviewed => app.next_unreviewed_file(),
         Action::OpenFileList => {
@@ -236,7 +256,6 @@ fn handle_viewing_action(app: &mut tui::app::App, action: tui::keymap::Action) {
         }
         _ => {}
     }
-    app.status_message = None;
 }
 
 fn handle_input_action(app: &mut tui::app::App, action: tui::keymap::Action) {
