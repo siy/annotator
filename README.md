@@ -4,6 +4,20 @@ A Rust CLI tool for reviewing and annotating large repositories file-by-file. An
 
 ## Installation
 
+### From release (recommended)
+
+```sh
+curl -sSL https://raw.githubusercontent.com/siy/annotator/master/install.sh | sh
+```
+
+Or specify a version:
+
+```sh
+curl -sSL https://raw.githubusercontent.com/siy/annotator/master/install.sh | sh -s v0.1.0
+```
+
+### From source
+
 ```sh
 cargo install --path .
 ```
